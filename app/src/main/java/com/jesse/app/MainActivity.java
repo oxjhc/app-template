@@ -1,34 +1,33 @@
 package com.jesse.app;
 
-import android.animation.Animator;
 import android.app.ActivityOptions;
 import android.app.Dialog;
 import android.app.DialogFragment;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
-import android.support.constraint.ConstraintLayout;
 import android.support.design.widget.BottomNavigationView;
 import android.support.design.widget.FloatingActionButton;
-import android.support.v4.view.ViewPager;
+import android.support.v4.view.GestureDetectorCompat;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
+import android.view.GestureDetector;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.animation.AccelerateInterpolator;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
-import android.view.animation.TranslateAnimation;
-import android.widget.FrameLayout;
+import android.view.animation.DecelerateInterpolator;
+import android.view.animation.Interpolator;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
 import android.widget.ListView;
-import android.widget.TextView;
+import android.widget.Toast;
 import android.widget.ViewFlipper;
-
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
 
 import static java.lang.Math.abs;
 
@@ -39,7 +38,10 @@ public class MainActivity extends AppCompatActivity {
     private Animation in_from_right;
     private Animation out_to_left;
     private Animation out_to_right;
+    private Animation fade_in;
+    private Animation fade_out;
     private Menu menu;
+    private ListView proofList;
 
     private void enableMenu(Boolean enable) {
         for (int i = 0; i < menu.size(); i++) {
@@ -69,24 +71,38 @@ public class MainActivity extends AppCompatActivity {
                     nextId = -1;
             }
             int nextChild = mFlipper.indexOfChild(findViewById(nextId));
+            mFlipper.setInAnimation(fade_in);
+            mFlipper.setOutAnimation(fade_out);
+            mFlipper.setDisplayedChild(nextChild);
 
-            if (curChild == nextChild) {
-                enableMenu(true);
-                return false;
-            } else if (curChild < nextChild) {
-                mFlipper.setInAnimation(in_from_right);
-                mFlipper.setOutAnimation(out_to_left);
-                mFlipper.setDisplayedChild(nextChild);
-            } else if (curChild > nextChild) {
-                mFlipper.setInAnimation(in_from_left);
-                mFlipper.setOutAnimation(out_to_right);
-                mFlipper.setDisplayedChild(nextChild);
-            }
+//            if (curChild == nextChild) {
+//                enableMenu(true);
+//                return false;
+//            } else if (curChild < nextChild) {
+//                mFlipper.setInAnimation(in_from_right);
+//                mFlipper.setOutAnimation(out_to_left);
+//                mFlipper.setDisplayedChild(nextChild);
+//            } else if (curChild > nextChild) {
+//                mFlipper.setInAnimation(in_from_left);
+//                mFlipper.setOutAnimation(out_to_right);
+//                mFlipper.setDisplayedChild(nextChild);
+//            }
 
             enableMenu(true);
             return true;
         }
 
+    };
+
+    private BottomNavigationView.OnNavigationItemReselectedListener mOnNavigationItemReselectedListener
+            = new BottomNavigationView.OnNavigationItemReselectedListener() {
+        @Override
+        public void onNavigationItemReselected(@NonNull MenuItem item) {
+            switch (item.getItemId()) {
+                case R.id.navigation_proofs:
+                    proofList.smoothScrollToPosition(0);
+            }
+        }
     };
 
     @Override
@@ -96,6 +112,7 @@ public class MainActivity extends AppCompatActivity {
 
         BottomNavigationView navigation = (BottomNavigationView) findViewById(R.id.navigation);
         navigation.setOnNavigationItemSelectedListener(mOnNavigationItemSelectedListener);
+        navigation.setOnNavigationItemReselectedListener(mOnNavigationItemReselectedListener);
         menu = navigation.getMenu();
 
         mFlipper = (ViewFlipper) findViewById(R.id.viewFlipper);
@@ -106,8 +123,10 @@ public class MainActivity extends AppCompatActivity {
         in_from_right = AnimationUtils.loadAnimation(this, R.anim.in_from_right);
         out_to_left = AnimationUtils.loadAnimation(this, R.anim.out_to_left);
         out_to_right  = AnimationUtils.loadAnimation(this, R.anim.out_to_right);
+        fade_in = AnimationUtils.loadAnimation(this, R.anim.fade_in);
+        fade_out = AnimationUtils.loadAnimation(this, R.anim.fade_out);
 
-        FloatingActionButton proveLocation = (FloatingActionButton) findViewById(R.id.proveLocation);
+        final FloatingActionButton proveLocation = (FloatingActionButton) findViewById(R.id.proveLocation);
         final ActivityOptions options =
                 ActivityOptions.makeCustomAnimation(this, R.anim.in_from_right, R.anim.out_to_left);
         final Intent intent = new Intent(this, ProveLocation.class);
@@ -120,6 +139,29 @@ public class MainActivity extends AppCompatActivity {
                 return true;
             }
         });
+
+        proofList = (ListView) findViewById(R.id.proofList);
+
+        proofList.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view,
+                                    int position, long id) {
+                Toast.makeText(getApplicationContext(),
+                        "Click ListItem Number " + position, Toast.LENGTH_LONG)
+                        .show();
+            }
+        });
+
+        String[] values = new String[] {
+                "Proof 1", "Proof 2", "Proof 3",
+                "Proof 1", "Proof 2", "Proof 3",
+                "Proof 1", "Proof 2", "Proof 3",
+                "Proof 1", "Proof 2", "Proof 3",
+                "Proof 1", "Proof 2", "Proof 3"
+        };
+        final ArrayAdapter<String> adapter = new ArrayAdapter<>(this, R.layout.activity_main_proof_list_item, R.id.firstLine, values);
+
+        proofList.setAdapter(adapter);
     }
 
     @Override
